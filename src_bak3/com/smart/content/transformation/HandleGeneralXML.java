@@ -103,7 +103,7 @@ public class HandleGeneralXML {
 			tempXML.append("</CATEGORIES>");
 		}// end of if
 
-		/*//Adding Tags User Group
+		//Adding Tags User Group
 		if(USERGROUP_REFKEY != null && !"".equals(USERGROUP_REFKEY.trim())){
 			tempXML.append("<SECURITY>");
 			stringTokenizer = new StringTokenizer(USERGROUP_REFKEY, "+");		 
@@ -114,7 +114,7 @@ public class HandleGeneralXML {
 						.append("</USERGROUP>");
 			}
 			tempXML.append("</SECURITY>");
-		}*/
+		}
 		
 
 		return tempXML.toString();

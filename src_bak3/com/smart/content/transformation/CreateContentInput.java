@@ -10,9 +10,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -115,25 +113,14 @@ public class CreateContentInput {
 				String authName = xmlData.substring(xmlData.indexOf("<AUTHORUSERNAME>"), xmlData.indexOf("</AUTHORUSERNAME>")+ "</AUTHORUSERNAME>".length());
 				
 				//String ownerName = xmlData.substring(xmlData.indexOf("<OWNERUSERNAME>"), xmlData.indexOf("</OWNERUSERNAME>")+ "</OWNERUSERNAME>".length());
-			
+				
 				String xmlText = handleOKMAttributeInXML(xmlData.replace(authName, ""));
-				
-				String visibilityStatus = handleRuntimeData(xmlText);
-				
-				String visibiltyGroup = xmlText.substring(xmlText.indexOf("<VISIBILITY_GROUP>"), xmlText.indexOf("</VISIBILITY_GROUP>"));
-				
-				String finalVisibility = visibiltyGroup.substring(visibiltyGroup.indexOf("[~!~"));
-				
-				if(finalVisibility.contains("~!~Internal~!~Self-Help~!~")){
-					// Based on visibility, deciding the reference type
-					xmlText = xmlText.replaceAll("<ANALYST_ANSWERSOLUTION>", "<CLIENT_ANSWERSOLUTION>").replaceAll("</ANALYST_ANSWERSOLUTION>", "</CLIENT_ANSWERSOLUTION>");
-				}
 				
 				StringBuilder builderCompleteXML = new StringBuilder();
 				
 				// combining xml for xml with view etc and xml with OKM channel schema attributes
 
-				builderCompleteXML.append(generalXMLTemplate.replace("<AUTHORUSERNAME></AUTHORUSERNAME>", authName)).append(visibilityStatus).append(xmlText).append(generalContentXMLEndTag);
+				builderCompleteXML.append(generalXMLTemplate.replace("<AUTHORUSERNAME></AUTHORUSERNAME>", authName)).append(xmlText).append(generalContentXMLEndTag);
 
 				logger.info("XML data for file "+fileName+ " is ::: "+builderCompleteXML);
 				if (builderCompleteXML != null && !"".equals(builderCompleteXML.toString().trim())) {
@@ -156,40 +143,6 @@ public class CreateContentInput {
 
 	} //end of writeFileContent
 	
-	public String handleRuntimeData(String xmlText) {
-		
-		
-		StringBuffer tempXML = new StringBuffer();
-		ArrayList<String> temp = new ArrayList<String>();
-		String visibility = xmlText.substring(xmlText.lastIndexOf("CDATA[~!~"), xmlText.lastIndexOf("~!~]]></VISIBILITY_GROUP>"));
-		
-		if (visibility.contains("~!~Internal~!~Self-Help")){
-		String test1 = visibility.substring(visibility.indexOf("~")+3, visibility.lastIndexOf("~!~"));
-		String test = visibility.substring(visibility.lastIndexOf("~")+1).replaceAll("-", "_");
-		temp.add(test);
-		temp.add(test1);
-		}else{		
-		String visibile = visibility.substring(visibility.lastIndexOf("~")+1);
-		temp.add(visibile);
-		}
-		
-		tempXML.append("<SECURITY>");
-		Iterator<String> test123 = temp.iterator();
-		while(test123.hasNext()){
-		
-		tempXML.append("<USERGROUP>").append("<REFERENCE_KEY>")
-		.append(test123.next().toUpperCase())
-		.append("</REFERENCE_KEY>").append("<GUID></GUID>")
-		.append("</USERGROUP>");
-		}
-		
-		tempXML.append("</SECURITY>");
-
-		return tempXML.toString();
-		
-	}
-
-
 	/**
 	 * 
 	 * method is used for read XML content from given file.
@@ -343,9 +296,6 @@ public class CreateContentInput {
 					}
 					tempXML.append("]]>");
 					String dataPrepared = "<"+value+">"+tempXML.toString()+"</"+value+">";
-					
-					
-					
 					transformedString = transformedString.replace("</CONTENT>", dataPrepared+"</CONTENT>");
 				} // end of merging fields
 				
@@ -362,7 +312,6 @@ public class CreateContentInput {
 		}
 		return transformedString;
 	}
-	
 	
 	/**
 	 * 

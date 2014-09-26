@@ -25,7 +25,7 @@ import com.inquira.imwows.generated.SecurityServicesServiceLocator;
 
 /*
  * Issue - Replace the final XML content for image/ attachment . Example ../abc.txt or ../abc.jpg
- * â€¢  Class is responsible for creating the content in InfoManager and also copy the image/attachment at required path
+ * •  Class is responsible for creating the content in InfoManager and also copy the image/attachment at required path
 */
 public class ImportContent {
 	private Logger logger = Logger.getLogger("ImportContent");
@@ -238,12 +238,16 @@ public class ImportContent {
 
 	} //end of writeFileContent
 	
-	public ArrayList<String> listFilesForFolder(final File folder) {
+	public ArrayList<String> listFilesForFolder(File folder) {
 		 String fileNames ="";
 		 ArrayList<String> listDetail = new ArrayList<String>();
-		 if(listDetail.isEmpty())
+		 if(folder!=null && !folder.isDirectory()){
 			 return null;
-	    for (final File fileEntry : folder.listFiles()) {
+		 }
+		// if(folder==null || (folder.isDirectory() && folder.listFiles().length==0))return null;
+		 /*if(listDetail.isEmpty())
+			 return null;*/
+	    for (File fileEntry : folder.listFiles()) {
 	        if (fileEntry.isDirectory()) {
 	            listFilesForFolder(fileEntry);
 	        } else {
@@ -362,7 +366,7 @@ public class ImportContent {
 				String attachString = finalContentXML.substring(finalContentXML.indexOf("<ATTACHMENTS>"), finalContentXML.indexOf("</ATTACHMENTS>") + ("</ATTACHMENTS>").length());
 				
 				StringBuffer bufferedOutput = new StringBuffer();
-				if(details !=null){
+				if(details !=null && details.size()>0){
 				for(String str : details){
 					
 					if(str.contains(".gif"))
