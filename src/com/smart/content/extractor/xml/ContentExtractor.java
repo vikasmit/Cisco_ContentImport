@@ -194,8 +194,13 @@ public class ContentExtractor {
 	public HashMap<String, String> readContentAttribute() {
 		Properties prop = new Properties();
 		try {
-			prop.load(new FileInputStream(getRelativePath("RelativePathWithPackage")
+			/*prop.load(new FileInputStream(getRelativePath("RelativePathWithPackage")
 					+ parserMasterAttFileName));
+			*/
+			File file = new File("C:\\SmartToolConfig\\master_attribute.properties");
+
+			FileReader reader = new FileReader(file) ; 
+			prop.load(reader);
 			
 			contentAttribute = new HashMap<String, String>();
 			
@@ -407,7 +412,55 @@ public class ContentExtractor {
 					Element firstname = document.createElement(elem);
 					if(elem.equals("FIELD_18")){
 						String  temp = tempMap.get("FIELD_18");
-						temp = " " + tempMap.get(elem);
+						temp = "_" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD2")){
+						String  temp = tempMap.get("FIELD2");
+						temp = "<br/>~~QUESTION~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD4")){
+						String  temp = tempMap.get("FIELD4");
+						temp = "<br/>~~ANSWER~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD_13")){
+						String  temp = tempMap.get("FIELD_13");
+						temp = "<br/>~~PROBLEM~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD_12")){
+						String  temp = tempMap.get("FIELD_12");
+						temp = "<br/>~~SOLUTION~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD_14")){
+						String  temp = tempMap.get("FIELD_14");
+						temp = "<br/>~~ERROR~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD09")){
+						String  temp = tempMap.get("FIELD09");
+						temp = "<br/>~~ROOT-CAUSE~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD10")){
+						String  temp = tempMap.get("FIELD10");
+						temp = "<br/>~~WORKAROUND~~<br/>" + tempMap.get(elem);
+						firstname.appendChild(document.createCDATASection(temp));
+						rootElement.appendChild(firstname);
+						continue;
+					}else if(elem.equals("FIELD_11")){
+						String  temp = tempMap.get("FIELD_11");
+						temp = "<br/>~~REFRENCE~~<br/>" + tempMap.get(elem);
 						firstname.appendChild(document.createCDATASection(temp));
 						rootElement.appendChild(firstname);
 						continue;

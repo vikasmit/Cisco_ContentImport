@@ -7,16 +7,24 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.poi.hpsf.HPSFException;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 
 import com.inquira.imwows.generated.ContentServices;
 import com.inquira.imwows.generated.ContentServicesServiceLocator;
@@ -37,18 +45,26 @@ public class ImportContent {
 	imUrlSecurityService="",
 	imUrlContentService="",
 	destFilePathForAttachment="",	destFileForImage="",documentCreatedPath="",parserFileLocation="", imageFileLocation="", imreositoryName="";
+	private static String outputDocIDDetail="";
 	private List<String> attachmentNameList = null,imageNameList=null;
 	private String okmAttributeFileName = "";
 	private StringBuilder findStrUsedInAttachment = null;
 	private boolean DocPublishedFlag = true;
 	
+	private enum JAVASCRIPT_METHODS {ONCLICK,ONMOUSEOVER,ONMOUSEOUT};
+	private final static String TOKEN="@TOKEN@";
+	
 	private String AUTH_SOAP_MSG= "<AUTHENTICATE><USER>%s</USER><PASSWORD>%s</PASSWORD><REPOSITORY_REFERENCE_KEY>%s</REPOSITORY_REFERENCE_KEY></AUTHENTICATE>";
+
+	static ArrayList<String> docDetails = new ArrayList<String>();
 	
 	public static void main(String[] args) throws Exception {
 		ImportContent classObj = new ImportContent();
 		boolean response = classObj.loadResource();
 		if(response){
 			classObj.processXMLFile();
+			exportToExcel(docDetails);
+			
 		}
 		classObj.logger.info("Terminating and exiting app!!! ");
 		classObj.logger.info("===============================ENDING OF CONTENT IMPORT===============================");
@@ -66,21 +82,33 @@ public class ImportContent {
 				
 			prop = new Properties();
     		// properties file in classes folder
-    		InputStream inObj = getClass().getResourceAsStream("/"+ getClass().getPackage().getName().replace('.', '/')+ "/webservice_resource.properties");
-    		prop.load(inObj);
+    		//InputStream inObj = getClass().getResourceAsStream("/"+ getClass().getPackage().getName().replace('.', '/')+ "/webservice_resource.properties");
+    		
+    		File file = new File(System.getProperty("SMART_HOME")+"webservice_resource.properties");
+
+    		FileReader reader = new FileReader(file) ; 
+    		prop.load(reader);
+    		
+    		//prop.load(inObj);
 			userName = prop.getProperty("userName");
 			password = prop.getProperty("password");
 			repository = prop.getProperty("repository");
 			imUrlSecurityService = prop.getProperty("imUrlForSecurtiyService");
 			imUrlContentService = prop.getProperty("imUrlForContentService");
 			DocPublishedFlag = Boolean.valueOf(prop.getProperty("DocPublished"));
-
+			outputDocIDDetail= prop.getProperty("outputDocIDDetail");
+			
 			AUTH_SOAP_MSG = String.format(AUTH_SOAP_MSG, userName,password,repository);
 			
     		// properties file content_import.properties
 			prop = new Properties();
-    		InputStream inObjTransformation = getClass().getResourceAsStream("/com/smart/content/transformation/content_import.properties");
-    		prop.load(inObjTransformation);
+//    		InputStream inObjTransformation = getClass().getResourceAsStream("/com/smart/content/transformation/content_import.properties");
+  //  		prop.load(inObjTransformation);
+			file = new File(System.getProperty("SMART_HOME")+"content_import.properties");
+
+    		reader = new FileReader(file) ; 
+    		prop.load(reader);
+
 
     		inputXMLFileLocation = prop.getProperty("IM_CONTENT_IMPORT_INPUTXMLPATH");
     		failedXMLFileLocation=prop.getProperty("IM_IMPORT_FAILED_XMLPATH");
@@ -222,6 +250,9 @@ public class ImportContent {
 						imagesDetails = listFilesForFolder(folder);
 						logger.info("Attachments are :: "+imagesDetails);
 						
+						System.out.println(docDetails);
+						//exportToExcel(docDetails);
+						
 						copyAttachmentFile(imageFileLocation, imagesDetails, fileName);
 						copyImageFile(imageFileLocation, imageNameList, fileName);
 					}
@@ -238,12 +269,69 @@ public class ImportContent {
 
 	} //end of writeFileContent
 	
-	public ArrayList<String> listFilesForFolder(final File folder) {
+	 public static void exportToExcel(ArrayList<String> data) throws HPSFException {
+
+		 ArrayList headers = new ArrayList();
+		  headers.add("Doc ID");
+	        headers.add("Document");
+	        headers.add("Version");
+
+    	HSSFWorkbook wb = new HSSFWorkbook();
+       HSSFSheet sheet = wb.createSheet("Sample");
+
+       int rowIdx = 0;
+       short cellIdx = 0;
+       // Header
+       HSSFRow hssfHeader = sheet.createRow(rowIdx);
+       HSSFCellStyle cellStyle = wb.createCellStyle();
+       cellStyle.setAlignment(HSSFCellStyle.ALIGN_CENTER);
+       cellStyle.setFillBackgroundColor(HSSFCellStyle.SOLID_FOREGROUND);
+       
+       for (Iterator cells = headers.iterator(); cells.hasNext();) {
+           HSSFCell hssfCell = hssfHeader.createCell(cellIdx++);
+           hssfCell.setCellStyle(cellStyle);
+           hssfCell.setCellValue((String) cells.next());
+       }
+
+       // Data
+       rowIdx = 1;
+       for (Iterator rows = data.iterator(); rows.hasNext();) {
+          // ArrayList row = (ArrayList) rows.next();
+       	String row = (String) rows.next();
+       	String row1 = (String) rows.next();
+       	String row2 = (String) rows.next();
+       	ArrayList test = new ArrayList();
+       	test.add(row);
+       	test.add(row1);
+       	test.add(row2);
+       	HSSFRow hssfRow = sheet.createRow(rowIdx++);
+           cellIdx = 0;
+           for (Iterator cells = test.iterator(); cells.hasNext();) {
+               HSSFCell hssfCell = hssfRow.createCell(cellIdx++);
+               hssfCell.setCellValue((String) cells.next());
+               
+           }
+       }
+
+       wb.setSheetName(0, "Sample");
+       try {
+           FileOutputStream outs = new FileOutputStream(outputDocIDDetail);
+           wb.write(outs);
+           outs.close();
+       } catch (IOException e) {
+           throw new HPSFException(e.getMessage());
+       }
+
+   }
+	
+	
+	
+	public ArrayList<String> listFilesForFolder(File folder) {
 		 String fileNames ="";
 		 ArrayList<String> listDetail = new ArrayList<String>();
-		 if(listDetail.isEmpty())
+		 if(!folder.exists())
 			 return null;
-	    for (final File fileEntry : folder.listFiles()) {
+	    for (File fileEntry : folder.listFiles()) {
 	        if (fileEntry.isDirectory()) {
 	            listFilesForFolder(fileEntry);
 	        } else {
@@ -339,10 +427,14 @@ public class ImportContent {
 	 * @return boolean
 	 * 
 	 */
+	
 
 	private boolean createContent(String contentXML, String fileName) {
 
 		String docID = "";
+		String document = "";
+		String version = "";
+		String attachString = null;
 		try {
 			if (contentXML != null && !"".equals(contentXML.trim())) {
 				
@@ -355,28 +447,42 @@ public class ImportContent {
 				System.out.println("List of Folder Files :: " +details);
 				
 				
-				String finalContentXML = handleFinalInputXml(contentXML).replaceAll(" src=\"","<img src=\"/library/" + imreositoryName + "/" + "att_" + imagesFolderLoc + "/" +imageFileLocation.substring(imageFileLocation.indexOf("imageLoc/")+ "imageLoc/".length()));
+				String finalContentXML = handleFinalInputXml(contentXML);
 				
+				if(finalContentXML.contains(" src=\""))
+				finalContentXML =finalContentXML.replaceAll(" src=\"","<img src=\"/library/" + imreositoryName + "/" + "att_" + imagesFolderLoc + "/" +imageFileLocation.substring(imageFileLocation.indexOf("imageLoc/")+ "imageLoc/".length()));
+				
+				
+				if(finalContentXML.contains("kms_dt_expand.gif\"") || finalContentXML.contains("kms_dt_collapse.gif\"")){
+					
+					finalContentXML =finalContentXML.replaceAll("src=\"/library/" + imreositoryName + "/" + "att_" + imagesFolderLoc + "/kms_dt_expand.gif\"","src=\"/library/kms_dt_expand.gif\"");
+					
+					finalContentXML =finalContentXML.replaceAll("src=\"/library/" + imreositoryName + "/" + "att_" + imagesFolderLoc + "/kms_dt_collapse.gif\"","src=\"/library/kms_dt_collapse.gif\"");
+				
+				}
+				
+				if(finalContentXML.contains("<IMG border") || finalContentXML.contains("<IMG id=img_expSection"))
 				finalContentXML = finalContentXML.replaceAll("<IMG border=0", "").replaceAll("<IMG id=img_expSection_1", "").replaceAll("<IMG id=img_expSection_2", "").replaceAll("<IMG id=img_expSection_3", "").replaceAll("<IMG id=img_expSection_4", "").replaceAll("<IMG id=img_expSection_5", "").replaceAll("<IMG id=img_expSection_6", "").replaceAll("<IMG id=img_expSection_7", "").replaceAll("<IMG id=img_expSection_9", "").replaceAll("<IMG id=img_expSection_8", "");	
 				
-				String attachString = finalContentXML.substring(finalContentXML.indexOf("<ATTACHMENTS>"), finalContentXML.indexOf("</ATTACHMENTS>") + ("</ATTACHMENTS>").length());
+				if(finalContentXML.contains("<ATTACHMENTS>")){
+				attachString = finalContentXML.substring(finalContentXML.indexOf("<ATTACHMENTS>"), finalContentXML.indexOf("</ATTACHMENTS>") + ("</ATTACHMENTS>").length());
 				
+				}
 				StringBuffer bufferedOutput = new StringBuffer();
 				if(details !=null){
 				for(String str : details){
-					
 					if(str.contains(".gif"))
 					continue;
 				String finalAttachmentString = "<ATTACHMENTS><ATTACHMENT><![CDATA[	" + str + "]]></ATTACHMENT></ATTACHMENTS>";
 				bufferedOutput.append(finalAttachmentString);
 				}
 				}
+				if(attachString!=null && details!=null){
 				finalContentXML = finalContentXML.replace(attachString, bufferedOutput);
-			    
+				}
+				
 				finalContentXML = finalContentXML.replaceAll("<A href", "<A target=_blank href");
-				
-				logger.info("Final Content XML ::: "+finalContentXML);
-				
+
 				
 				// FINAL CODE
 				SecurityServices securityService = null;
@@ -391,8 +497,13 @@ public class ImportContent {
 				webserviceURL = new URL(imUrlContentService);
 				contentService = (ContentServices) contentServiceLocator.getContentServices(webserviceURL);
 				
-				byte ptext[] = finalContentXML.getBytes();
-			    finalContentXML = new String(ptext, "UTF-8");
+				
+				finalContentXML=replaceSpecialCharacters(finalContentXML);
+				
+				finalContentXML=replaceJavaScriptWithTokens(finalContentXML).replaceAll("&", "");
+				
+				
+				logger.info("Final Content XML ::: "+finalContentXML);
 				
 				String serverResponse=contentService.createContent(token, finalContentXML , DocPublishedFlag);
 				
@@ -402,6 +513,24 @@ public class ImportContent {
 					// finding the path created in IM for copy the attachment
 					documentCreatedPath = serverResponse.substring(serverResponse.indexOf("<RESOURCEPATH><![CDATA[")+"<RESOURCEPATH><![CDATA[".length(), serverResponse.indexOf("]]></RESOURCEPATH>"));
 					docID = serverResponse.substring(serverResponse.indexOf("<DOCUMENTID><![CDATA[")+"<DOCUMENTID><![CDATA[".length(), serverResponse.indexOf("]]></DOCUMENTID>"));
+					if(serverResponse.contains("<FIELD_17>")) {
+					document = serverResponse.substring(serverResponse.indexOf("<FIELD_17><![CDATA[")+"<FIELD_17><![CDATA[".length(), serverResponse.indexOf("]]></FIELD_17>"));
+					}
+					
+					if(serverResponse.contains("<FIELD_24>")) {
+						document = serverResponse.substring(serverResponse.indexOf("<FIELD_24><![CDATA[")+"<FIELD_24><![CDATA[".length(), serverResponse.indexOf("]]></FIELD_24>"));
+					}
+					
+					version = serverResponse.substring(serverResponse.indexOf("<FIELD_18><![CDATA[")+"<FIELD_18><![CDATA[".length(), serverResponse.indexOf("]]></FIELD_18>")).substring(version.lastIndexOf("_")+1);
+					version = version.substring(version.lastIndexOf("_")+1);
+					
+					docDetails.add(docID);
+					docDetails.add(document);
+					docDetails.add(version);
+					
+					System.out.println(docDetails);
+					//writeToExternalFile(docDetails,docID, document, version);					
+					
 					logger.info("Content created in Info Manager for file "+fileName +" with Document ID "+docID +" And path is " + documentCreatedPath+ "......");
 					return true;
 				}
@@ -420,7 +549,27 @@ public class ImportContent {
 			logger.error("Exception in creating content in InfoManager "
 					+ e.getMessage());
 		}
+		
+
 		return false;
+	}
+
+	private String replaceJavaScriptWithTokens(String finalContentXML) {
+		// TODO Auto-generated method stub
+		for(JAVASCRIPT_METHODS method:JAVASCRIPT_METHODS.values()){
+			finalContentXML=finalContentXML.replaceAll(method.toString().toLowerCase(), TOKEN+method.toString().toLowerCase());
+		}
+		
+		return finalContentXML;
+	}
+
+	private String replaceSpecialCharacters(String finalContentXML) throws UnsupportedEncodingException {
+		byte ptext[] = finalContentXML.getBytes();
+	    finalContentXML = new String(ptext, "UTF-8");
+	    
+	    finalContentXML = finalContentXML.replaceAll("[^\\u0000-\\u007f]+", "\"");
+	    
+	    return finalContentXML;
 	}
 
 	/**
@@ -517,6 +666,10 @@ public class ImportContent {
 		try {
 
 			for (String fileName : ImageFilesName) {
+				
+				if(fileName.equals("kms_dt_expand.gif") || fileName.equals("kms_dt_collapse.gif")){
+					continue;
+				}else{
 				try {
 
 					File source = new File(sourceImagePath + "att_" +imagesFolderLoc + "/"+ fileName+ "/"); // source
@@ -541,6 +694,7 @@ public class ImportContent {
 							+ e.getMessage());
 					continue;
 				}
+			}
 			}
 			result = true;
 
@@ -609,7 +763,9 @@ public class ImportContent {
 			        		imageNameList.add(finalValueIMG);
 			        		
 			        		}
-			        	if(finalValueIMGwithSpcChar.contains(" ")){
+			        	if(finalValueIMGwithSpcChar.contains(" ") || !finalValueIMG.contains("kms_")){
+			        		if(imageNameList.contains(finalValueIMGwithSpcChar))
+			        			continue;
 			        		imageNameList.add(finalValueIMGwithSpcChar);
 			        		}
 			        	

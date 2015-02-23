@@ -1,6 +1,8 @@
 package com.smart.content.transformation;
 
 
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -39,8 +41,13 @@ public class ContentTransform {
     	
 		try {
     		// properties file in classes folder
-    		InputStream inObj = getClass().getResourceAsStream("/"+ getClass().getPackage().getName().replace('.', '/')+ "/content_import.properties");
-    		prop.load(inObj);
+    		//InputStream inObj = getClass().getResourceAsStream("/"+ getClass().getPackage().getName().replace('.', '/')+ "/content_import.properties");
+    		//prop.load(inObj);
+			File file = new File((System.getProperty("SMART_HOME")+"content_import.properties"));
+
+			FileReader reader = new FileReader(file) ; 
+			prop.load(reader);
+
 
     		inputXMLFileLocation = prop.getProperty("IM_CONTENT_FILE_INPUTXMLPATH");
     		outputXMLFileLocation= prop.getProperty("IM_CONTENT_IMPORT_INPUTXMLPATH");
